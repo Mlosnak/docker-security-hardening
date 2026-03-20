@@ -668,22 +668,19 @@
             }, 4000);
         }
 
-        let lastEventCount = 0;
+        let lastAttackTs = 0;
         async function pollAttackEvents() {
             try {
-                const res = await fetch('/api/events');
+                const res = await fetch('/api/last-attack');
                 const data = await res.json();
-                if (data.events.length > lastEventCount && lastEventCount > 0) {
-                    const latest = data.events[data.events.length - 1];
-                    if (latest.title.includes('Simulação')) {
-                        showAttackEffect(latest.title.replace('Simulação: ', ''));
-                    }
+                if (data.ts > lastAttackTs && lastAttackTs > 0) {
+                    showAttackEffect(data.name);
                 }
-                lastEventCount = data.events.length;
+                lastAttackTs = data.ts;
             } catch(e) {}
         }
         pollAttackEvents();
-        setInterval(pollAttackEvents, 2000);
+        setInterval(pollAttackEvents, 1500);
     </script>
 </body>
 </html>
