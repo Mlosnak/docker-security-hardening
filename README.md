@@ -32,8 +32,6 @@ Duas aplicações web rodam dentro de um **único container Docker endurecido** 
 
 Quando você lança um ataque no SOC, o NexBank mostra um **banner de alerta em tempo real** dentro do iframe. O resultado aparece inline com comando, regra Falco acionada, código MITRE ATT&CK e veredicto (bloqueado/detectado).
 
-> **Para recrutadores:** Demonstra domínio prático de **container security**, **Docker Swarm orchestration**, **runtime monitoring (Falco)**, **web development (Flask)** e **automação DevOps**. Cada controle implementado é mapeado ao framework MITRE ATT&CK.
-
 ---
 
 ## Screenshots
