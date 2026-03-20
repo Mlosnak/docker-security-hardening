@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/banner.png" alt="Container Hardening Lab" width="800">
-</p>
-
 <h1 align="center">Container Hardening & Monitoring Lab</h1>
 
 <p align="center">
@@ -43,17 +39,17 @@ Quando você lança um ataque no SOC, o NexBank mostra um **banner de alerta em 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshot-soc.png" alt="SOC Dashboard" width="800"><br>
+<img width="1870" height="935" alt="docker1" src="https://github.com/user-attachments/assets/049076cc-893c-4afe-9434-2fe37c07fd84" />
   <em>SOC Dashboard — Score de segurança, verificações ao vivo, cards de ataque e log terminal</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshot-nexbank.png" alt="NexBank Target" width="800"><br>
+<img width="1865" height="936" alt="docker2" src="https://github.com/user-attachments/assets/bd88f1ae-b915-4c9b-9038-9faca9623287" />
   <em>NexBank — Site alvo monitorado com banner de ataque detectado</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshot-attack.png" alt="Attack Result" width="800"><br>
+<img width="1860" height="928" alt="docker3" src="https://github.com/user-attachments/assets/4784910b-f42a-4267-aa4b-7ed60632c865" />
   <em>Resultado de ataque — Comando, regra Falco, MITRE ATT&CK e detalhe</em>
 </p>
 
