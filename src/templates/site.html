@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexBank — Digital Banking</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --accent: #4cc9f0;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --bg: #0f1117;
+            --card: #1a1d28;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #252836;
+            --nav-bg: #0a0c14;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            background: var(--nav-bg);
+            padding: 0 2rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+        }
+        .nav-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .nav-title span { color: var(--accent); }
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .nav-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .nav-user-info { text-align: right; }
+        .nav-user-name { color: white; font-size: 0.875rem; font-weight: 600; }
+        .nav-user-role { color: rgba(255,255,255,0.5); font-size: 0.75rem; }
+
+        /* ── Main Layout ── */
+        .main-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* ── Welcome Section ── */
+        .welcome-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+        }
+        .welcome-text h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .welcome-text p {
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 0.9rem;
+        }
+        .welcome-date {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* ── Cards Grid ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--primary), var(--accent)); }
+        .stat-card:nth-child(2)::before { background: linear-gradient(90deg, var(--success), #34d399); }
+        .stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--warning), #fb923c); }
+        .stat-card:nth-child(4)::before { background: linear-gradient(90deg, var(--danger), #f87171); }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .stat-card:nth-child(1) .stat-icon { background: rgba(67,97,238,0.1); color: var(--primary); }
+        .stat-card:nth-child(2) .stat-icon { background: rgba(6,214,160,0.1); color: var(--success); }
+        .stat-card:nth-child(3) .stat-icon { background: rgba(255,209,102,0.1); color: var(--warning); }
+        .stat-card:nth-child(4) .stat-icon { background: rgba(239,71,111,0.1); color: var(--danger); }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+        .stat-change {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+
+        /* ── Content Grid ── */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .card-badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .card-badge.blue { background: rgba(67,97,238,0.1); color: var(--primary); }
+        .card-body { padding: 1.25rem 1.5rem; }
+
+        /* ── Transactions Table ── */
+        .tx-table { width: 100%; }
+        .tx-row {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 0;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .tx-row:last-child { border-bottom: none; }
+        .tx-row:hover { background: rgba(67,97,238,0.08); margin: 0 -1.5rem; padding: 0.875rem 1.5rem; }
+        .tx-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+        .tx-icon.income { background: rgba(6,214,160,0.1); color: var(--success); }
+        .tx-icon.expense { background: rgba(239,71,111,0.1); color: var(--danger); }
+        .tx-icon.transfer { background: rgba(67,97,238,0.1); color: var(--primary); }
+        .tx-info { flex: 1; }
+        .tx-name { font-weight: 500; font-size: 0.9rem; }
+        .tx-date { font-size: 0.8rem; color: var(--text-secondary); }
+        .tx-amount { font-weight: 600; font-size: 0.95rem; }
+        .tx-amount.positive { color: var(--success); }
+        .tx-amount.negative { color: var(--danger); }
+
+        /* ── Quick Actions ── */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--card);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .action-btn:hover {
+            border-color: var(--primary);
+            background: rgba(67,97,238,0.1);
+            transform: translateY(-1px);
+        }
+        .action-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(67,97,238,0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .action-label { font-weight: 500; font-size: 0.875rem; }
+        .action-desc { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* ── Security Banner ── */
+        .security-banner {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            color: white;
+        }
+        .sb-left { display: flex; align-items: center; gap: 1rem; }
+        .sb-shield {
+            width: 48px;
+            height: 48px;
+            background: rgba(6,214,160,0.2);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .sb-title { font-weight: 600; font-size: 1rem; }
+        .sb-desc { font-size: 0.85rem; opacity: 0.7; margin-top: 2px; }
+        .sb-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6,214,160,0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .sb-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Credit Card ── */
+        .credit-card {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .credit-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .cc-type { font-size: 0.75rem; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase; }
+        .cc-number { font-size: 1.15rem; letter-spacing: 3px; margin: 1rem 0; font-weight: 500; }
+        .cc-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+        .cc-label { font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cc-value { font-size: 0.85rem; font-weight: 500; margin-top: 2px; }
+        .cc-brand { font-size: 1.5rem; font-weight: 700; font-style: italic; opacity: 0.9; }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 1rem;
+        }
+        .footer a { color: var(--primary); text-decoration: none; }
+
+        /* ── Attack overlay (shown when SOC attacks) ── */
+        .attack-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(239,71,111,0.05);
+            z-index: 9999;
+            pointer-events: none;
+            animation: flash-red 0.5s ease;
+        }
+        .attack-overlay.active { display: block; }
+        @keyframes flash-red {
+            0%, 100% { background: rgba(239,71,111,0); }
+            50% { background: rgba(239,71,111,0.12); }
+        }
+        .attack-banner {
+            position: fixed;
+            top: 72px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--danger);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 10000;
+            display: none;
+            animation: slide-down 0.3s ease;
+            box-shadow: 0 4px 20px rgba(239,71,111,0.4);
+        }
+        .attack-banner.active { display: flex; align-items: center; gap: 8px; }
+        @keyframes slide-down {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .content-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="attack-overlay" id="attackOverlay"></div>
+    <div class="attack-banner" id="attackBanner">&#9888; ATAQUE DETECTADO — Tentativa de acesso não autorizado</div>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="nav-logo">N</div>
+            <div class="nav-title">Nex<span>Bank</span></div>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Transferências</a>
+            <a href="#">Cartões</a>
+            <a href="#">Investimentos</a>
+            <a href="#">Configurações</a>
+        </div>
+        <div class="nav-user">
+            <div class="nav-user-info">
+                <div class="nav-user-name">Carlos Mendes</div>
+                <div class="nav-user-role">Conta Premium</div>
+            </div>
+            <div class="nav-avatar">CM</div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="security-banner">
+            <div class="sb-left">
+                <div class="sb-shield">&#128737;</div>
+                <div>
+                    <div class="sb-title">Proteção Docker Swarm Ativa</div>
+                    <div class="sb-desc">Seu ambiente está protegido por hardening de container + Falco SIEM</div>
+                </div>
+            </div>
+            <div class="sb-status">
+                <div class="sb-dot"></div>
+                Monitoramento em tempo real
+            </div>
+        </div>
+
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <h1>Bem-vindo, Carlos &#128075;</h1>
+                <p>Aqui está o resumo da sua conta</p>
+            </div>
+            <div class="welcome-date" id="currentDate"></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">&#128176;</div>
+                <div class="stat-label">Saldo Disponível</div>
+                <div class="stat-value">R$ 24.580<small>,90</small></div>
+                <div class="stat-change positive">&#9650; 12.5% este mês</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128200;</div>
+                <div class="stat-label">Investimentos</div>
+                <div class="stat-value">R$ 156.320<small>,00</small></div>
+                <div class="stat-change positive">&#9650; 8.2% rentabilidade</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128179;</div>
+                <div class="stat-label">Fatura do Cartão</div>
+                <div class="stat-value">R$ 3.247<small>,65</small></div>
+                <div class="stat-change negative">Vence em 5 dias</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128176;</div>
+                <div class="stat-label">Limite Disponível</div>
+                <div class="stat-value">R$ 16.752<small>,35</small></div>
+                <div class="stat-change positive">83.7% disponível</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Transações Recentes</h3>
+                    <span class="card-badge blue">Últimos 7 dias</span>
+                </div>
+                <div class="card-body">
+                    <div class="tx-table">
+                        <div class="tx-row">
+                            <div class="tx-icon income">&#8593;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">Salário — TechCorp LTDA</div>
+                                <div class="tx-date">Hoje, 08:00</div>
+                            </div>
+                            <div class="tx-amount positive">+ R$ 12.500,00</div>
+                        </div>
+                        <div class="tx-row">
+                            <div class="tx-icon expense">&#8595;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">Aluguel — Imobiliária Central</div>
+                                <div class="tx-date">Ontem, 10:30</div>
+                            </div>
+                            <div class="tx-amount negative">- R$ 2.800,00</div>
+                        </div>
+                        <div class="tx-row">
+                            <div class="tx-icon expense">&#8595;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">Supermercado Extra</div>
+                                <div class="tx-date">18 Mar, 14:22</div>
+                            </div>
+                            <div class="tx-amount negative">- R$ 487,32</div>
+                        </div>
+                        <div class="tx-row">
+                            <div class="tx-icon transfer">&#8644;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">PIX — Ana Silva</div>
+                                <div class="tx-date">17 Mar, 19:45</div>
+                            </div>
+                            <div class="tx-amount negative">- R$ 150,00</div>
+                        </div>
+                        <div class="tx-row">
+                            <div class="tx-icon income">&#8593;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">Freelance — Design System</div>
+                                <div class="tx-date">16 Mar, 11:00</div>
+                            </div>
+                            <div class="tx-amount positive">+ R$ 3.200,00</div>
+                        </div>
+                        <div class="tx-row">
+                            <div class="tx-icon expense">&#8595;</div>
+                            <div class="tx-info">
+                                <div class="tx-name">Netflix + Spotify</div>
+                                <div class="tx-date">15 Mar, 00:01</div>
+                            </div>
+                            <div class="tx-amount negative">- R$ 79,80</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom: 1.25rem;">
+                    <div class="card-header">
+                        <h3>Meu Cartão</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="credit-card">
+                            <div class="cc-type">NexBank Platinum</div>
+                            <div class="cc-number">•••• •••• •••• 4821</div>
+                            <div class="cc-bottom">
+                                <div>
+                                    <div class="cc-label">Titular</div>
+                                    <div class="cc-value">CARLOS MENDES</div>
+                                </div>
+                                <div>
+                                    <div class="cc-label">Validade</div>
+                                    <div class="cc-value">12/28</div>
+                                </div>
+                                <div class="cc-brand">VISA</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Ações Rápidas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="actions-grid">
+                            <div class="action-btn">
+                                <div class="action-icon">&#8594;</div>
+                                <div>
+                                    <div class="action-label">PIX</div>
+                                    <div class="action-desc">Enviar ou receber</div>
+                                </div>
+                            </div>
+                            <div class="action-btn">
+                                <div class="action-icon">&#128179;</div>
+                                <div>
+                                    <div class="action-label">Pagar</div>
+                                    <div class="action-desc">Boletos e contas</div>
+                                </div>
+                            </div>
+                            <div class="action-btn">
+                                <div class="action-icon">&#128200;</div>
+                                <div>
+                                    <div class="action-label">Investir</div>
+                                    <div class="action-desc">CDB, LCI e ações</div>
+                                </div>
+                            </div>
+                            <div class="action-btn">
+                                <div class="action-icon">&#128274;</div>
+                                <div>
+                                    <div class="action-label">Segurança</div>
+                                    <div class="action-desc">Tokens e senhas</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            NexBank Digital S.A. — CNPJ 00.000.000/0001-00 — <strong>Este é um site fictício para demonstração de segurança.</strong><br>
+            Faz parte do <a href="/">Container Hardening & Monitoring Lab</a> — Monitorado por Docker Swarm + Falco
+        </div>
+    </div>
+
+    <script>
+        // Date display
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', options);
+
+        // Listen for attack events from parent (SOC dashboard iframe)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'attack') {
+                showAttackEffect(event.data.name);
+            }
+        });
+
+        function showAttackEffect(attackName) {
+            const overlay = document.getElementById('attackOverlay');
+            const banner = document.getElementById('attackBanner');
+
+            overlay.classList.add('active');
+            banner.classList.add('active');
+            banner.innerHTML = '&#9888; ATAQUE DETECTADO — ' + attackName;
+
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 1500);
+
+            setTimeout(() => {
+                banner.classList.remove('active');
+            }, 4000);
+        }
+
+        let lastEventCount = 0;
+        async function pollAttackEvents() {
+            try {
+                const res = await fetch('/api/events');
+                const data = await res.json();
+                if (data.events.length > lastEventCount && lastEventCount > 0) {
+                    const latest = data.events[data.events.length - 1];
+                    if (latest.title.includes('Simulação')) {
+                        showAttackEffect(latest.title.replace('Simulação: ', ''));
+                    }
+                }
+                lastEventCount = data.events.length;
+            } catch(e) {}
+        }
+        pollAttackEvents();
+        setInterval(pollAttackEvents, 2000);
+    </script>
+</body>
+</html>

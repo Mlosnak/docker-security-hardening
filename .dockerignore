@@ -1,0 +1,20 @@
+# Evita copiar arquivos desnecessários para o contexto de build.
+# Reduz tempo de build e previne vazamento de informações sensíveis.
+.git
+.gitignore
+.dockerignore
+README.md
+LICENSE
+Makefile
+deploy/
+configs/
+scripts/
+docs/
+*.md
+*.log
+.env
+.env.*
+__pycache__
+*.pyc
+.vscode/
+.idea/

@@ -1,0 +1,12 @@
+# Flask para o dashboard web de segurança.
+# Versão pinada para reproducibilidade — nunca use sem versão em produção.
+flask==3.0.3
+
+# Werkzeug é dependência do Flask, pinamos para evitar breaking changes.
+werkzeug==3.0.3
+
+# Jinja2 para renderização dos templates HTML do dashboard.
+jinja2==3.1.4
+
+# MarkupSafe é dependência do Jinja2.
+markupsafe==2.1.5

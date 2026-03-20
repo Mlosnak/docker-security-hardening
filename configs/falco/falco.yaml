@@ -1,0 +1,28 @@
+engine:
+  kind: modern_ebpf
+
+rules_files:
+  - /etc/falco/falco_rules.yaml
+  - /etc/falco/rules.d/rules.local.yaml
+
+stdout_output:
+  enabled: true
+
+json_output: true
+json_include_output_property: true
+json_include_tags_property: true
+
+metadata_download:
+  max_mb: 100
+  chunk_wait_us: 1000
+  watch_freq_sec: 1
+
+log_level: info
+
+outputs:
+  rate: 1
+  max_burst: 100
+
+metrics:
+  enabled: true
+  interval: 15m

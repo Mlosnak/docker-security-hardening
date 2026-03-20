@@ -1,0 +1,60 @@
+- macro: app_python_binary
+  condition: >
+    (proc.exepath = "/usr/local/bin/python3.12" or
+     proc.exepath = "/usr/local/bin/python3" or
+     proc.exepath = "/usr/local/bin/python")
+
+- list: secrets_access_tools
+  items: ["cat", "head", "tail", "less", "more", "xxd", "hexdump", "strings",
+          "cp", "mv", "scp", "curl", "wget", "bash", "sh", "dash", "python",
+          "python3", "perl", "ruby", "node"]
+
+# MITRE T1552.001
+- rule: Unauthorized Access to Swarm Secrets
+  desc: >
+    Detecta tentativa de leitura ou execução em /run/secrets/ por processo
+    não autorizado. Em operação normal, apenas o binário Python da app (UID 10001)
+    deve acessar este path. Qualquer outro acesso indica possível comprometimento
+    ou tentativa de exfiltração de credenciais.
+  condition: >
+    spawned_process and
+    container and
+    (proc.cmdline contains "/run/secrets" or
+     evt.arg.filename startswith "/run/secrets") and
+    not app_python_binary
+  output: >
+    ALERTA CRÍTICO — Acesso não autorizado a Docker Secrets detectado
+    (user=%user.name uid=%user.uid command=%proc.cmdline
+     pid=%proc.pid container_id=%container.id
+     container_name=%container.name image=%container.image.repository
+     parent=%proc.pname evt_type=%evt.type)
+  priority: CRITICAL
+  tags:
+    - container
+    - secrets
+    - mitre_credential_access
+    - T1552.001
+
+# MITRE T1059
+- rule: Shell Spawned in Hardened Container
+  desc: >
+    Detecta abertura de shell interativo em container da aplicação hardened.
+    Containers de produção não devem ter shells interativos; este evento
+    indica uso de docker exec ou exploração de vulnerabilidade.
+  condition: >
+    spawned_process and
+    container and
+    container.image.repository = "hardening-lab/app" and
+    proc.name in (bash, sh, dash, ash, zsh, csh, ksh, fish)
+  output: >
+    ALERTA — Shell interativo aberto em container hardened
+    (user=%user.name uid=%user.uid shell=%proc.name
+     pid=%proc.pid container_id=%container.id
+     container_name=%container.name parent=%proc.pname
+     cmdline=%proc.cmdline)
+  priority: WARNING
+  tags:
+    - container
+    - shell
+    - mitre_execution
+    - T1059
